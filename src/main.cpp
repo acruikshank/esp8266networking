@@ -33,7 +33,7 @@ float distance(Location loc1, Location loc2) {
 
 void setup() {
     Serial.begin(115200);
-    WiFi.begin("Platypus", "AshMinou");
+    WiFi.begin("", "");
     // WiFi.begin("Floor5GIG", "innovation");
     Serial.println();
     Serial.print("Wait for WiFi");
