@@ -3,6 +3,9 @@
 
 #define STRANDS 15
 
+const char WIFI_NET[20] = "anthazoa";
+const char WIFI_PSK[20] = "chaartdev";
+
 uint16_t INFOPort = 50050;
 
 char packetBuffer[255]; //buffer to hold incoming packet
@@ -27,13 +30,13 @@ Location myLocation;
 
 float distance(Location loc1, Location loc2) {
   float dx = loc1.x - myLocation.x;
-  float dx = loc1.y - myLocaction.y;
+  float dy = loc1.y - myLocation.y;
   return sqrt(dx*dx + dy*dy);
 }
 
 void setup() {
     Serial.begin(115200);
-    WiFi.begin("", "");
+    WiFi.begin(WIFI_NET, WIFI_PSK);
     // WiFi.begin("Floor5GIG", "innovation");
     Serial.println();
     Serial.print("Wait for WiFi");
@@ -65,9 +68,16 @@ void setup() {
 
     // Udp.read((char *) &distanceTable, sizeof(distanceTable));
     Udp.read((char *) &distanceTable, sizeof(distanceTable));
-    uint64_t macAddress = WiFi.macAddress();
+    uint8_t macAddress[6] = {0};
+    WiFi.macAddress(&macAddress[0]);
+    uint64_t longMac = 0;
+    for(int i=5; i > -1; i--){
+      longMac = longMac & macAddress[i];
+      longMac = longMac << (i*8);
+    }
+
     for (int i=0; i<STRANDS; i++) {
-      if (macAddress == distanceTable[i].macAddress) {
+      if (longMac == distanceTable[i].macAddress) {
         myLocation = distanceTable[i].location;
       }
       Serial.printf("%d: %f, %f\n", distanceTable[i].macAddress, distanceTable[i].location.x, distanceTable[i].location.y);
