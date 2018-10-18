@@ -21,16 +21,17 @@ typedef struct Location {
 } Location;
 
 typedef struct Strand {
-  uint64_t macAddress;
+  uint32_t macAddress;
   Location location;
 } Strand;
 
+uint32_t myMac = 0;
 Strand distanceTable[STRANDS];
 Location myLocation;
 
 float distance(Location loc1, Location loc2) {
-  float dx = loc1.x - myLocation.x;
-  float dy = loc1.y - myLocation.y;
+  float dx = loc1.x - loc2.x;
+  float dy = loc1.y - loc2.y;
   return sqrt(dx*dx + dy*dy);
 }
 
@@ -69,33 +70,44 @@ void setup() {
     // Udp.read((char *) &distanceTable, sizeof(distanceTable));
     Udp.read((char *) &distanceTable, sizeof(distanceTable));
     uint8_t macAddress[6] = {0};
+
     WiFi.macAddress(&macAddress[0]);
-    uint64_t longMac = 0;
-    for(int i=5; i > -1; i--){
-      longMac = longMac & macAddress[i];
-      longMac = longMac << (i*8);
+    for (int i=0; i<6; i++) {
+      Serial.printf("%d:", macAddress[i]);
     }
+    Serial.println();
+
+    for(int i=3; i < 6; i++) {
+      myMac |= (macAddress[i] << (8*(5-i)));
+    }
+    Serial.printf("mac: %d\n", myMac);
+
+    delay(1000);
 
     for (int i=0; i<STRANDS; i++) {
-      if (longMac == distanceTable[i].macAddress) {
+      if (myMac == distanceTable[i].macAddress) {
         myLocation = distanceTable[i].location;
+        Serial.printf("my location: %f, %f\n", distanceTable[i].location.x, distanceTable[i].location.y);
       }
-      Serial.printf("%d: %f, %f\n", distanceTable[i].macAddress, distanceTable[i].location.x, distanceTable[i].location.y);
+    }
+    for (int i=0; i<STRANDS; i++) {
+      Serial.printf("%d: %f, %f d: %f\n", distanceTable[i].macAddress, distanceTable[i].location.x, distanceTable[i].location.y, distance(myLocation, distanceTable[i].location));
     }
     Serial.println();
 }
 
 void loop() {
 
-  // Udp.beginPacket("10.0.1.255", 54608);
-  // delay(5);
-  // Udp.print("esp8266");
-  // Udp.endPacket();
-  // Udp.flush();
-  // digitalWrite(BUILTIN_LED, LOW);
-  // delay(50);
-  // digitalWrite(BUILTIN_LED, HIGH);
-  // delay(2950);
+  Udp.beginPacket("192.168.0.255", 54608);
+  delay(5);
+  Udp.print("1");
+  Udp.endPacket();
+  Udp.flush();
+  digitalWrite(BUILTIN_LED, LOW);
+  delay(50);
+  digitalWrite(BUILTIN_LED, HIGH);
+  delay(2950);
+  Serial.printf("%d\n", myMac);
 
   // if there's data available, read a packet
   // int packetSize = Udp.parsePacket();
